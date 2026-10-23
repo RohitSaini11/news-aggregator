@@ -3,11 +3,10 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const users = require('../data/users');
 const { JWT_SECRET, JWT_EXPIRES_IN, SALT_ROUNDS } = require('../config');
+const { isNonEmptyString, isValidPreferences } = require('../utils/validators');
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD_LENGTH = 6;
-
-const isNonEmptyString = (value) => typeof value === 'string' && value.trim() !== '';
 
 const signup = async (req, res, next) => {
     try {
@@ -22,7 +21,7 @@ const signup = async (req, res, next) => {
         if (typeof password !== 'string' || password.length < MIN_PASSWORD_LENGTH) {
             return res.status(400).json({ error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters` });
         }
-        if (!Array.isArray(preferences) || !preferences.every(isNonEmptyString)) {
+        if (!isValidPreferences(preferences)) {
             return res.status(400).json({ error: 'Preferences must be an array of strings' });
         }
 
