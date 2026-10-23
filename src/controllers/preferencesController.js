@@ -1,4 +1,8 @@
-const { isValidPreferences } = require('../utils/validators');
+const {
+    validatePreferences,
+    normalizePreferences,
+    sendValidationError
+} = require('../validators/userValidators');
 
 const getPreferences = (req, res) => {
     return res.status(200).json({ preferences: req.user.preferences });
@@ -7,12 +11,12 @@ const getPreferences = (req, res) => {
 const updatePreferences = (req, res) => {
     const { preferences } = req.body;
 
-    if (!isValidPreferences(preferences)) {
-        return res.status(400).json({ error: 'Preferences must be an array of strings' });
+    const errors = validatePreferences(preferences);
+    if (errors.length > 0) {
+        return sendValidationError(res, errors);
     }
 
-    // Trim entries and drop duplicates while keeping the original order
-    req.user.preferences = [...new Set(preferences.map((p) => p.trim()))];
+    req.user.preferences = normalizePreferences(preferences);
 
     return res.status(200).json({
         message: 'Preferences updated successfully',

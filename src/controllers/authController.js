@@ -3,27 +3,21 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const users = require('../data/users');
 const { JWT_SECRET, JWT_EXPIRES_IN, SALT_ROUNDS } = require('../config');
-const { isNonEmptyString, isValidPreferences } = require('../utils/validators');
-
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const MIN_PASSWORD_LENGTH = 6;
+const {
+    validateSignup,
+    validateLogin,
+    normalizePreferences,
+    sendValidationError
+} = require('../validators/userValidators');
 
 const signup = async (req, res, next) => {
     try {
-        const { name, email, password, preferences = [] } = req.body;
+        const errors = validateSignup(req.body);
+        if (errors.length > 0) {
+            return sendValidationError(res, errors);
+        }
 
-        if (!isNonEmptyString(name)) {
-            return res.status(400).json({ error: 'Name is required' });
-        }
-        if (!isNonEmptyString(email) || !EMAIL_REGEX.test(email)) {
-            return res.status(400).json({ error: 'A valid email is required' });
-        }
-        if (typeof password !== 'string' || password.length < MIN_PASSWORD_LENGTH) {
-            return res.status(400).json({ error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters` });
-        }
-        if (!isValidPreferences(preferences)) {
-            return res.status(400).json({ error: 'Preferences must be an array of strings' });
-        }
+        const { name, email, password, preferences = [] } = req.body;
 
         const normalizedEmail = email.trim().toLowerCase();
         if (users.some((user) => user.email === normalizedEmail)) {
@@ -36,7 +30,7 @@ const signup = async (req, res, next) => {
             name: name.trim(),
             email: normalizedEmail,
             passwordHash,
-            preferences
+            preferences: normalizePreferences(preferences)
         };
         users.push(user);
 
@@ -51,11 +45,12 @@ const signup = async (req, res, next) => {
 
 const login = async (req, res, next) => {
     try {
-        const { email, password } = req.body;
-
-        if (!isNonEmptyString(email) || typeof password !== 'string' || password === '') {
-            return res.status(400).json({ error: 'Email and password are required' });
+        const errors = validateLogin(req.body);
+        if (errors.length > 0) {
+            return sendValidationError(res, errors);
         }
+
+        const { email, password } = req.body;
 
         const user = users.find((u) => u.email === email.trim().toLowerCase());
         const passwordMatches = user && await bcrypt.compare(password, user.passwordHash);
