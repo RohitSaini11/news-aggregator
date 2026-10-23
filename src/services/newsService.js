@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const { NEWS_API_KEY, NEWS_API_BASE_URL, NEWS_API_TIMEOUT_MS } = require('../config');
 
 const PAGE_SIZE = 20;
+const MAX_ATTEMPTS = 2;
 
 const createError = (status, message) => {
     const err = new Error(message);
@@ -44,16 +45,23 @@ const normalizeArticle = (article) => ({
 
 const buildPreferencesQuery = (preferences) => preferences.map((p) => `"${p}"`).join(' OR ');
 
+// Timeouts and network errors (no response from the provider) are worth one more try
+const isRetryable = (err) => !err.response;
+
 const fetchArticles = async (query) => {
     let response;
-    try {
-        response = await axios.get(`${NEWS_API_BASE_URL}/everything`, {
-            params: { q: query, language: 'en', sortBy: 'publishedAt', pageSize: PAGE_SIZE },
-            headers: { 'X-Api-Key': NEWS_API_KEY },
-            timeout: NEWS_API_TIMEOUT_MS
-        });
-    } catch (err) {
-        throw toServiceError(err);
+    for (let attempt = 1; !response; attempt++) {
+        try {
+            response = await axios.get(`${NEWS_API_BASE_URL}/everything`, {
+                params: { q: query, language: 'en', sortBy: 'publishedAt', pageSize: PAGE_SIZE },
+                headers: { 'X-Api-Key': NEWS_API_KEY },
+                timeout: NEWS_API_TIMEOUT_MS
+            });
+        } catch (err) {
+            if (attempt >= MAX_ATTEMPTS || !isRetryable(err)) {
+                throw toServiceError(err);
+            }
+        }
     }
 
     return (response.data.articles || [])

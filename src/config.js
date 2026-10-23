@@ -7,7 +7,7 @@ module.exports = {
     SALT_ROUNDS: 10,
     NEWS_API_KEY: process.env.NEWS_API_KEY,
     NEWS_API_BASE_URL: 'https://newsapi.org/v2',
-    NEWS_API_TIMEOUT_MS: 5000,
+    NEWS_API_TIMEOUT_MS: 10000,
     NEWS_CACHE_TTL_MS: Number(process.env.NEWS_CACHE_TTL_MS) || 30 * MINUTE_MS,
     NEWS_CACHE_MAX_ENTRIES: 100,
     NEWS_REFRESH_INTERVAL_MS: Number(process.env.NEWS_REFRESH_INTERVAL_MS) || 25 * MINUTE_MS,
