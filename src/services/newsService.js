@@ -1,4 +1,5 @@
 const axios = require('axios');
+const crypto = require('crypto');
 const { NEWS_API_KEY, NEWS_API_BASE_URL, NEWS_API_TIMEOUT_MS } = require('../config');
 
 const PAGE_SIZE = 20;
@@ -27,7 +28,11 @@ const toServiceError = (err) => {
     return createError(502, 'Unable to reach news provider');
 };
 
+// NewsAPI articles have no id, so derive a stable one from the URL
+const createArticleId = (url) => crypto.createHash('sha256').update(url).digest('hex').slice(0, 16);
+
 const normalizeArticle = (article) => ({
+    id: createArticleId(article.url),
     title: article.title,
     description: article.description,
     url: article.url,
@@ -37,9 +42,9 @@ const normalizeArticle = (article) => ({
     publishedAt: article.publishedAt
 });
 
-const fetchNewsByPreferences = async (preferences) => {
-    const query = preferences.map((p) => `"${p}"`).join(' OR ');
+const buildPreferencesQuery = (preferences) => preferences.map((p) => `"${p}"`).join(' OR ');
 
+const fetchArticles = async (query) => {
     let response;
     try {
         response = await axios.get(`${NEWS_API_BASE_URL}/everything`, {
@@ -52,8 +57,8 @@ const fetchNewsByPreferences = async (preferences) => {
     }
 
     return (response.data.articles || [])
-        .filter((article) => article.title && article.title !== '[Removed]')
+        .filter((article) => article.url && article.title && article.title !== '[Removed]')
         .map(normalizeArticle);
 };
 
-module.exports = { fetchNewsByPreferences };
+module.exports = { fetchArticles, buildPreferencesQuery };

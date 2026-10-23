@@ -30,7 +30,9 @@ const signup = async (req, res, next) => {
             name: name.trim(),
             email: normalizedEmail,
             passwordHash,
-            preferences: normalizePreferences(preferences)
+            preferences: normalizePreferences(preferences),
+            readArticles: [],
+            favoriteArticles: []
         };
         users.push(user);
 

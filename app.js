@@ -3,6 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const userRoutes = require('./src/routes/userRoutes');
 const newsRoutes = require('./src/routes/newsRoutes');
+const { startNewsRefresher } = require('./src/jobs/newsRefresher');
 const { PORT } = require('./src/config');
 
 const app = express();
@@ -37,6 +38,7 @@ if (require.main === module) {
         }
         console.log(`Server is listening on ${PORT}`);
     });
+    startNewsRefresher();
 }
 
 module.exports = app;

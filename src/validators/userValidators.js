@@ -77,6 +77,9 @@ const sendValidationError = (res, details) => {
 };
 
 module.exports = {
+    PREFERENCE_MAX_LENGTH,
+    PREFERENCE_REGEX,
+    isNonEmptyString,
     validateSignup,
     validateLogin,
     validatePreferences,
